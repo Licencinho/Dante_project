@@ -81,17 +81,19 @@ for tweet_keyword in sys.argv[1:]: # for each keyword, do some shit
         # interfere with the next keyword
         #obtengo el total de tweets obtenidos
         cur.execute("""select count(1) from TweetBank where tweet_keyword = '"""+str(tweet_keyword)+"""'""")
-        t=cur.fetchall()
-        total=int(t[0][0] or 0)
-        cur.execute("""select TotalHarvested from TweetLog where keyword = '"""+str(tweet_keyword)+"""' limit 1""")
-        tb=cur.fetchall()
-        thisbatch=int(tb[0][0] or 0)
+        all=cur.fetchone()[0]
+        total=int(all or 0)
+        print "Obtenidos : ",total
+        cur.execute("""select max(TotalHarvested) from TweetLog where keyword = '"""+str(tweet_keyword)+"""' limit 1""")
+        tb=cur.fetchone()[0]
+        thisbatch=int(tb or 0)
+        print "En esta corrida: ",thisbatch
         cur.execute("""insert into TweetLog (BatchId, keyword, RunDate, HarvestedThisRun, TotalHarvested) values
         (
         '"""+str(batch_id)+"""',
         '"""+str(tweet_keyword)+"""',
-        curdate(),
-        '"""+(int(int(total)-int(thisbatch)))+"""',
+        now(),
+        '"""+(str(int(total)-int(thisbatch)))+"""',
         (select count(1) from TweetBank where tweet_keyword = '"""+str(tweet_keyword)+"""')
         )""")
         # agregar record a la tabla de log para recoradar que se hizo
