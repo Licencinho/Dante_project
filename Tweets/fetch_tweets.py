@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from twython import Twython
 import string, json, pprint
 import urllib
@@ -29,9 +30,7 @@ harvest_list = ['longueira', 'lavin', 'matthei']
 cur.execute("select max(BatchId) from TweetLog")
 batch_id_cur = cur.fetchall()
 batch_id = int(batch_id_cur[0][0] or 0)+1
-# grabbing the last "batch id", if it exists so we
-# can make log entries that make SOME sense
-
+# Obtengo el utlimo proceso y lo incremento en 1 para saber la cantidad que he ejecutado
 
 
 for tweet_keyword in sys.argv[1:]: # for each keyword, do some shit
@@ -80,13 +79,19 @@ for tweet_keyword in sys.argv[1:]: # for each keyword, do some shit
         cur.execute("""delete from TweetBankTemp where tweet_keyword = '"""+str(tweet_keyword)+"""'""")
         # take all THESE out of the temp table to not
         # interfere with the next keyword
-
+        #obtengo el total de tweets obtenidos
+        cur.execute("""select count(1) from TweetBank where tweet_keyword = '"""+str(tweet_keyword)+"""'""")
+        t=cur.fetchall()
+        total=int(t[0][0] or 0)
+        cur.execute("""select TotalHarvested from TweetLog where keyword = '"""+str(tweet_keyword)+"""' limit 1""")
+        tb=cur.fetchall()
+        thisbatch=int(tb[0][0] or 0)
         cur.execute("""insert into TweetLog (BatchId, keyword, RunDate, HarvestedThisRun, TotalHarvested) values
         (
         '"""+str(batch_id)+"""',
         '"""+str(tweet_keyword)+"""',
         curdate(),
-        ((select count(1) from TweetBank where tweet_keyword = '"""+str(tweet_keyword)+"""')-(select TotalHarvested from TweetLog where keyword = '"""+str(tweet_keyword)+"""' order by RunDate desc limit 1)),
+        '"""+(int(int(total)-int(thisbatch)))+"""',
         (select count(1) from TweetBank where tweet_keyword = '"""+str(tweet_keyword)+"""')
         )""")
         # agregar record a la tabla de log para recoradar que se hizo
